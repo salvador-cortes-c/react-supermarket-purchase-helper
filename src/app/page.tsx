@@ -6,8 +6,12 @@ import { useEffect, useRef, useState } from "react";
 type Product = {
   id: string;
   name: string;
+  price?: string;
+  unitPrice?: string;
   packagingFormat?: string;
   thumbnail: string;
+  sourceUrl?: string;
+  scrapedAt?: string;
 };
 
 type ApiProduct = {
@@ -15,6 +19,10 @@ type ApiProduct = {
   name: string;
   packaging_format?: string | null;
   image?: string | null;
+  price?: string | null;
+  unit_price?: string | null;
+  source_url?: string | null;
+  scraped_at?: string | null;
 };
 
 function toId(product: { name: string; packagingFormat?: string; productKey?: string }): string {
@@ -85,6 +93,10 @@ export default function Home() {
               name: item.name,
               packagingFormat: item.packaging_format ?? undefined,
               thumbnail: item.image ?? "/file.svg",
+              price: item.price ?? undefined,
+              unitPrice: item.unit_price ?? undefined,
+              sourceUrl: item.source_url ?? undefined,
+              scrapedAt: item.scraped_at ?? undefined,
             };
             return product;
           })
@@ -191,7 +203,9 @@ export default function Home() {
                         <span>{product.name}</span>
                       </div>
                       <span className="text-xs text-zinc-500">
-                        {product.packagingFormat ?? ""}
+                        {product.unitPrice ?? ""}
+                        {product.unitPrice ? " • " : ""}
+                        {product.price ?? ""}
                       </span>
                     </button>
                   </li>
@@ -231,7 +245,9 @@ export default function Home() {
                     <div>
                       <p className="text-sm font-medium">{product.name}</p>
                       <p className="text-xs text-zinc-500">
-                        {product.packagingFormat ?? ""}
+                        {product.unitPrice ?? ""}
+                        {product.unitPrice ? " • " : ""}
+                        {product.price ?? ""}
                       </p>
                     </div>
                   </div>
