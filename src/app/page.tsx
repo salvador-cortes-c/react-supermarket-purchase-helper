@@ -8,22 +8,29 @@ type Product = {
   name: string;
   price?: string;
   unitPrice?: string;
+  packagingFormat?: string;
   thumbnail: string;
   sourceUrl?: string;
   scrapedAt?: string;
 };
 
-type ApiProduct = {
-  name: string;
+type ApiPriceSnapshot = {
   price: string;
   unit_price?: string | null;
-  image?: string | null;
   source_url?: string | null;
-  scraped_at?: string | null;
+  scraped_at: string;
 };
 
-function toId(product: { name: string; unitPrice?: string }): string {
-  return `${product.name}__${product.unitPrice ?? ""}`.toLowerCase();
+type ApiProduct = {
+  name: string;
+  packaging_format?: string | null;
+  image?: string | null;
+  prices?: ApiPriceSnapshot[] | null;
+};
+
+function toId(product: { name: string; packagingFormat?: string; unitPrice?: string }): string {
+  const suffix = product.packagingFormat ?? product.unitPrice ?? "";
+  return `${product.name}__${suffix}`.toLowerCase();
 }
 
 function apiBaseUrl(): string {
@@ -77,15 +84,18 @@ export default function Home() {
         const data = (await response.json()) as ApiProduct[];
         const mapped: Product[] = data
           .map((item) => {
-            const unitPrice = item.unit_price ?? undefined;
+            const snapshots = item.prices ?? [];
+            const latest = snapshots.length > 0 ? snapshots[snapshots.length - 1] : undefined;
+            const unitPrice = latest?.unit_price ?? undefined;
             const product: Product = {
-              id: toId({ name: item.name, unitPrice }),
+              id: toId({ name: item.name, packagingFormat: item.packaging_format ?? undefined, unitPrice }),
               name: item.name,
-              price: item.price,
+              price: latest?.price,
               unitPrice,
+              packagingFormat: item.packaging_format ?? undefined,
               thumbnail: item.image ?? "/file.svg",
-              sourceUrl: item.source_url ?? undefined,
-              scrapedAt: item.scraped_at ?? undefined,
+              sourceUrl: latest?.source_url ?? undefined,
+              scrapedAt: latest?.scraped_at ?? undefined,
             };
             return product;
           })
