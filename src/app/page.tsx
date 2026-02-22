@@ -6,30 +6,22 @@ import { useEffect, useRef, useState } from "react";
 type Product = {
   id: string;
   name: string;
-  price?: string;
-  unitPrice?: string;
   packagingFormat?: string;
   thumbnail: string;
-  sourceUrl?: string;
-  scrapedAt?: string;
-};
-
-type ApiPriceSnapshot = {
-  price: string;
-  unit_price?: string | null;
-  source_url?: string | null;
-  scraped_at: string;
 };
 
 type ApiProduct = {
+  product_key?: string | null;
   name: string;
   packaging_format?: string | null;
   image?: string | null;
-  prices?: ApiPriceSnapshot[] | null;
 };
 
-function toId(product: { name: string; packagingFormat?: string; unitPrice?: string }): string {
-  const suffix = product.packagingFormat ?? product.unitPrice ?? "";
+function toId(product: { name: string; packagingFormat?: string; productKey?: string }): string {
+  if (product.productKey) {
+    return product.productKey.toLowerCase();
+  }
+  const suffix = product.packagingFormat ?? "";
   return `${product.name}__${suffix}`.toLowerCase();
 }
 
@@ -84,18 +76,15 @@ export default function Home() {
         const data = (await response.json()) as ApiProduct[];
         const mapped: Product[] = data
           .map((item) => {
-            const snapshots = item.prices ?? [];
-            const latest = snapshots.length > 0 ? snapshots[snapshots.length - 1] : undefined;
-            const unitPrice = latest?.unit_price ?? undefined;
             const product: Product = {
-              id: toId({ name: item.name, packagingFormat: item.packaging_format ?? undefined, unitPrice }),
+              id: toId({
+                name: item.name,
+                packagingFormat: item.packaging_format ?? undefined,
+                productKey: item.product_key ?? undefined,
+              }),
               name: item.name,
-              price: latest?.price,
-              unitPrice,
               packagingFormat: item.packaging_format ?? undefined,
               thumbnail: item.image ?? "/file.svg",
-              sourceUrl: latest?.source_url ?? undefined,
-              scrapedAt: latest?.scraped_at ?? undefined,
             };
             return product;
           })
@@ -202,9 +191,7 @@ export default function Home() {
                         <span>{product.name}</span>
                       </div>
                       <span className="text-xs text-zinc-500">
-                        {product.unitPrice ?? ""}
-                        {product.unitPrice ? " • " : ""}
-                        {product.price ?? ""}
+                        {product.packagingFormat ?? ""}
                       </span>
                     </button>
                   </li>
@@ -244,9 +231,7 @@ export default function Home() {
                     <div>
                       <p className="text-sm font-medium">{product.name}</p>
                       <p className="text-xs text-zinc-500">
-                        {product.unitPrice ?? ""}
-                        {product.unitPrice ? " • " : ""}
-                        {product.price ?? ""}
+                        {product.packagingFormat ?? ""}
                       </p>
                     </div>
                   </div>
