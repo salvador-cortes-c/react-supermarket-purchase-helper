@@ -30,6 +30,18 @@ function apiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_PRODUCTS_API_BASE ?? "http://localhost:8000";
 }
 
+function parsePrice(value: string | null | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+  const cleaned = value.replace(/[^0-9.]/g, "");
+  if (!cleaned) {
+    return null;
+  }
+  const num = Number.parseFloat(cleaned);
+  return Number.isFinite(num) ? num : null;
+}
+
 export default function ComparePage() {
   const [listL1, setListL1] = useState<StoredProduct[]>([]);
   const [rows, setRows] = useState<ApiCompareRow[]>([]);
@@ -186,14 +198,42 @@ export default function ComparePage() {
                         </div>
                       </div>
                     </td>
-                    {stores.map((store) => {
-                      const cell = row.prices_by_store?.[store];
-                      return (
-                        <td key={store} className="px-4 py-3">
-                          {cell?.price ?? "—"}
-                        </td>
-                      );
-                    })}
+                    {(() => {
+                      const numericByStore = new Map<string, number>();
+                      for (const store of stores) {
+                        const cell = row.prices_by_store?.[store];
+                        const priceNumber = parsePrice(cell?.price);
+                        if (priceNumber !== null) {
+                          numericByStore.set(store, priceNumber);
+                        }
+                      }
+
+                      const values = Array.from(numericByStore.values());
+                      const min = values.length ? Math.min(...values) : null;
+                      const max = values.length ? Math.max(...values) : null;
+                      const highlightWorst = min !== null && max !== null && min !== max;
+
+                      return stores.map((store) => {
+                        const cell = row.prices_by_store?.[store];
+                        const priceNumber = numericByStore.get(store);
+                        const isBest = min !== null && priceNumber === min;
+                        const isWorst = highlightWorst && max !== null && priceNumber === max;
+
+                        const className = [
+                          "px-4 py-3",
+                          isBest ? "font-medium text-green-700 dark:text-green-400" : "",
+                          isWorst ? "font-medium text-red-700 dark:text-red-400" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ");
+
+                        return (
+                          <td key={store} className={className}>
+                            {cell?.price ?? "—"}
+                          </td>
+                        );
+                      });
+                    })()}
                   </tr>
                 ))}
               </tbody>
