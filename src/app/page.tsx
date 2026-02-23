@@ -44,15 +44,18 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const lastRequestRef = useRef(0);
+  const [restoredFromStorage, setRestoredFromStorage] = useState(false);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem("listL1");
       if (!raw) {
+        setRestoredFromStorage(true);
         return;
       }
       const parsed = JSON.parse(raw) as StoredProduct[];
       if (!Array.isArray(parsed)) {
+        setRestoredFromStorage(true);
         return;
       }
       const restored: Product[] = parsed
@@ -64,12 +67,17 @@ export default function Home() {
           thumbnail: item.thumbnail ?? "/file.svg",
         }));
       setListL1(restored);
+      setRestoredFromStorage(true);
     } catch {
       // Ignore invalid storage
+      setRestoredFromStorage(true);
     }
   }, []);
 
   useEffect(() => {
+    if (!restoredFromStorage) {
+      return;
+    }
     try {
       const toStore: StoredProduct[] = listL1.map((item) => ({
         id: item.id,
@@ -81,7 +89,7 @@ export default function Home() {
     } catch {
       // Ignore storage errors
     }
-  }, [listL1]);
+  }, [listL1, restoredFromStorage]);
 
   useEffect(() => {
     const query = search.trim();
