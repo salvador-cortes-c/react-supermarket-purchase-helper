@@ -140,20 +140,12 @@ export default function ComparePage() {
               Products are rows. Stores are columns.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-            >
-              Back
-            </Link>
-            <Link
-              href="/plan"
-              className="rounded-md bg-foreground px-3 py-2 text-sm text-background"
-            >
-              Continue
-            </Link>
-          </div>
+          <Link
+            href="/"
+            className="rounded-md border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          >
+            Back
+          </Link>
         </div>
 
         {listL1.length === 0 ? (
