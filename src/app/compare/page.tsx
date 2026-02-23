@@ -130,6 +130,40 @@ export default function ComparePage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [rows]);
 
+  const totalsByStore = useMemo(() => {
+    const totals = new Map<string, { sum: number; count: number }>();
+    for (const store of stores) {
+      totals.set(store, { sum: 0, count: 0 });
+    }
+
+    for (const row of rows) {
+      for (const store of stores) {
+        const price = parsePrice(row.prices_by_store?.[store]?.price);
+        if (price === null) {
+          continue;
+        }
+        const current = totals.get(store) ?? { sum: 0, count: 0 };
+        totals.set(store, { sum: current.sum + price, count: current.count + 1 });
+      }
+    }
+
+    return totals;
+  }, [rows, stores]);
+
+  const totalHighlights = useMemo(() => {
+    const values: number[] = [];
+    for (const store of stores) {
+      const total = totalsByStore.get(store);
+      if (total && total.count > 0 && Number.isFinite(total.sum)) {
+        values.push(total.sum);
+      }
+    }
+    const min = values.length ? Math.min(...values) : null;
+    const max = values.length ? Math.max(...values) : null;
+    const highlightWorst = min !== null && max !== null && min !== max;
+    return { min, max, highlightWorst };
+  }, [stores, totalsByStore]);
+
   return (
     <div className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
       <main className="mx-auto w-full max-w-6xl">
@@ -237,6 +271,34 @@ export default function ComparePage() {
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr className="border-t border-zinc-200 bg-background dark:border-zinc-800">
+                  <td className="px-4 py-3 font-medium">Total</td>
+                  {stores.map((store) => {
+                    const total = totalsByStore.get(store) ?? { sum: 0, count: 0 };
+                    const isBest = total.count > 0 && totalHighlights.min !== null && total.sum === totalHighlights.min;
+                    const isWorst =
+                      total.count > 0 &&
+                      totalHighlights.highlightWorst &&
+                      totalHighlights.max !== null &&
+                      total.sum === totalHighlights.max;
+
+                    const className = [
+                      "px-4 py-3",
+                      isBest ? "font-medium text-green-700 dark:text-green-400" : "",
+                      isWorst ? "font-medium text-red-700 dark:text-red-400" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+
+                    return (
+                      <td key={store} className={className}>
+                        {total.count > 0 ? total.sum.toFixed(2) : "—"}
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tfoot>
             </table>
           </section>
         )}
