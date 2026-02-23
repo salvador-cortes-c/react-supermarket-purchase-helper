@@ -1,9 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 type Product = {
+  id: string;
+  name: string;
+  packagingFormat?: string;
+  thumbnail: string;
+};
+
+type StoredProduct = {
   id: string;
   name: string;
   packagingFormat?: string;
@@ -36,6 +44,44 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const lastRequestRef = useRef(0);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("listL1");
+      if (!raw) {
+        return;
+      }
+      const parsed = JSON.parse(raw) as StoredProduct[];
+      if (!Array.isArray(parsed)) {
+        return;
+      }
+      const restored: Product[] = parsed
+        .filter((item) => item && typeof item.id === "string" && typeof item.name === "string")
+        .map((item) => ({
+          id: item.id,
+          name: item.name,
+          packagingFormat: item.packagingFormat,
+          thumbnail: item.thumbnail ?? "/file.svg",
+        }));
+      setListL1(restored);
+    } catch {
+      // Ignore invalid storage
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const toStore: StoredProduct[] = listL1.map((item) => ({
+        id: item.id,
+        name: item.name,
+        packagingFormat: item.packagingFormat,
+        thumbnail: item.thumbnail,
+      }));
+      localStorage.setItem("listL1", JSON.stringify(toStore));
+    } catch {
+      // Ignore storage errors
+    }
+  }, [listL1]);
 
   useEffect(() => {
     const query = search.trim();
@@ -243,13 +289,22 @@ export default function Home() {
         </section>
 
         <div className="mt-8">
-          <button
-            type="button"
-            disabled={listL1.length === 0}
-            className="rounded-md bg-foreground px-4 py-2 text-sm text-background disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Continue to price comparison
-          </button>
+          {listL1.length === 0 ? (
+            <button
+              type="button"
+              disabled
+              className="rounded-md bg-foreground px-4 py-2 text-sm text-background disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Continue to price comparison
+            </button>
+          ) : (
+            <Link
+              href="/compare"
+              className="inline-flex rounded-md bg-foreground px-4 py-2 text-sm text-background"
+            >
+              Continue to price comparison
+            </Link>
+          )}
         </div>
       </main>
     </div>
